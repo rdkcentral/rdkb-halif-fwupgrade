@@ -119,6 +119,16 @@ extern "C"{
  *  Subsystem level function prototypes
  *
 **********************************************************************************/
+
+/*
+ * TODO:
+ *
+ * 1. Extend the return codes by listing out the possible reasons of failure, to improve the interface in the future.
+ *    This was reported during the review for header file migration to opensource github.
+ *
+ */
+
+
 /**
 * @brief Set FW Download URL and Filename.
 *
@@ -137,7 +147,6 @@ extern "C"{
 * @retval RETURN_OK if successful.
 * @retval RETURN_ERR if pUrl / pfilename string is NULL (or)
 *         failed to open HTTP download config file '/tmp/httpDwnld.conf'.
-* @remark The caller is responsible for providing a valid memory location for the function arguments.
 */
 INT fwupgrade_hal_set_download_url (char* pUrl, char* pfilename);
 
@@ -157,7 +166,6 @@ INT fwupgrade_hal_set_download_url (char* pUrl, char* pfilename);
 * @retval RETURN_OK if successful.
 * @retval RETURN_ERR if pUrl / pfilename string is NULL (or)
 *         failed to open HTTP download config file '/tmp/httpDwnld.conf'.
-* @remark The caller is responsible for providing a valid memory location for the function arguments.
 */
 INT fwupgrade_hal_get_download_url (char *pUrl, char* pfilename);
 
@@ -183,7 +191,6 @@ INT fwupgrade_hal_set_download_interface (unsigned int interface);
 * @retval RETURN_OK if successful.
 * @retval RETURN_ERR if pinterface is NULL (or)
 *         failed to open HTTP download interface config file '/tmp/httpDwnldIf.conf'.
-* @remark The caller is responsible for providing a valid memory location for the function argument.
 */
 /* interface=0 for wan0, interface=1 for erouter0 */
 INT fwupgrade_hal_get_download_interface (unsigned int* pinterface);
@@ -200,8 +207,6 @@ INT fwupgrade_hal_get_download_interface (unsigned int* pinterface);
 *         \n failed to set bootstate to new image.
 * @retval 400 - Invalid URL (or) Failed on gethostbyname() call.
 *
-* @note This function must not suspend and must not invoke any blocking system calls.
-*       \n It should probably just send a message to a driver event handler task.
 */
 INT fwupgrade_hal_download ();
 
@@ -234,7 +239,6 @@ INT fwupgrade_hal_get_download_status ();
 * @return the status of the operation.
 * @retval RETURN_OK if successful.
 * @retval RETURN_ERR if pValue is NULL.
-* @remark The caller is responsible for providing a valid memory location for the function argument.
 */
 INT fwupgrade_hal_reboot_ready (ULONG *pValue);
 
@@ -268,7 +272,6 @@ INT fwupgrade_hal_update_and_factoryreset ();
 * @return the status of the Firmware download and upgrade status.
 * @retval RETURN_OK if successful.
 * @retval RETURN_ERR in case of remote server not reachable.
-* @remark The caller is responsible for providing a valid memory location for the function argument.
 */
 INT fwupgrade_hal_download_install(const char *url);
 
