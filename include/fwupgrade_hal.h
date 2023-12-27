@@ -109,7 +109,9 @@ extern "C"{
 
 /** 
 * @} 
-/*
+*/
+
+/**
  * @addtogroup FWUPGRADE_HAL_APIS
  * @{
  */
@@ -138,7 +140,7 @@ extern "C"{
 
 * @param[in] pfilename - A pointer to a character array that will hold the firmware filename.
 *                      \n Filename buffer size should be at least 256 bytes.
-*                      \n pfilename format: <MODEL_NUM>_<BRANCH_NAME>_PROD_sey.bin
+*                      \n pfilename format: \<MODEL_NUM\>_<BRANCH_NAME>_PROD_sey.bin
 *                      \n pfilename example: TG4482PC2_6.2p10s1_PROD_sey.bin
 *                      \n Possible MODEL_NUM:
 *                      \n CGM4140COM, TG3482G, CGM4981COM, CGM4331COM, CGA4332COM, SR300, SE501, WNXL11BWL, SR203, SR213, TG4482A
@@ -158,7 +160,7 @@ INT fwupgrade_hal_set_download_url (char* pUrl, char* pfilename);
 *                  \n Example pUrl: http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images
 * @param[out] pfilename - A pointer to a character array that will hold the firmware filename.
 *                       \n The buffer size should be at least 256 bytes.
-*                       \n pfilename format: <MODEL_NUM>_<BRANCH_NAME>_PROD_sey.bin
+*                       \n pfilename format: \<MODEL_NUM\>_<BRANCH_NAME>_PROD_sey.bin
 *                       \n pfilename example: TG4482PC2_6.2p10s1_PROD_sey.bin
 *                       \n Possible MODEL_NUM:
 *                       \n CGM4140COM, TG3482G, CGM4981COM, CGM4331COM, CGA4332COM, SR300, SE501, WNXL11BWL, SR203, SR213, TG4482A
@@ -279,7 +281,7 @@ INT fwupgrade_hal_download_install(const char *url);
 }
 #endif
 #endif
-/** 
- * @
- */ 
 
+/**
+ * @}
+ */
