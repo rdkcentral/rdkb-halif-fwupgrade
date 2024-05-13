@@ -4,42 +4,65 @@
 
 - `HAL` \- Hardware Abstraction Layer
 - `RDK-B` \- Reference Design Kit for Broadband Devices
+- `CPE` \- Customer Premises Equipment
 - `OEM` \- Original Equipment Manufacture
+- `URL` \- Uniform Resource Locator
 
 ## Description
 
+The Firmware Management HAL (Hardware Abstraction Layer) module provides a standardized interface for managing firmware upgrades on devices within an RDK (Reference Design Kit) system. It serves as an abstraction layer between the firmware upgrade application and the underlying hardware, enabling a consistent way to perform firmware-related operations regardless of the specific device or platform.
+
+### Key Functionalities
+
+- **Image Download:** Initiates and manages the download of firmware images from a specified source, ensuring integrity and security.
+- **Image Verification:** Verifies the downloaded firmware images using checksums or other mechanisms to ensure their validity before installation.
+- **Image Installation:** Applies the downloaded and verified firmware image to the target device, following the appropriate installation procedures.
+- **Upgrade Status Tracking:** Monitors and reports the progress and status of firmware upgrades, including success, failure, or ongoing operations.
+- **Rollback and Recovery:** Provides mechanisms for rolling back to previous firmware versions in case of issues during or after the upgrade process.
+- **Configuration:** Allows for customization of firmware upgrade parameters, such as download protocols, storage locations, and installation options.
+
+In essence, the Firmware Management HAL simplifies and standardizes the process of upgrading firmware on RDK devices, providing a consistent and reliable interface for managing this critical aspect of device maintenance and functionality.
+
 The diagram below describes a high-level software architecture of the  Firmware Management HAL module stack.
 
-![Firmware Management HAL Architecture Diag](images/Firmware_Management_hal_architecture.png)
+```mermaid
 
-Firmware Management HAL is an abstraction layer implemented to interact with the vendor software's for getting the hardware specific details of the firmware for the CPE devices.In addition to that downloading status also can be known through the APIs.
+flowchart
+    Caller <--> HALIF[HAL Interface - fwupgrade_hal.h\n`HAL IF Specifcation / Contract Requirement`]
+    HALIF <--> VendorWrapper[HAL\nVendor Implementation]
+    VendorWrapper <--> VendorDrivers[Vendor Drivers\nImplementation]
+```
 
 ## Component Runtime Execution Requirements
 
 ### Initialization and Startup
 
-The below mentioned APIs will be used to set the download url,download the firmware from server, commit the firmware on the bank and set the reboot status from the Firmware Management HAL layers/code. 
+The Firmware Management HAL layer/code provides the following APIs to manage firmware upgrades and factory resets. To ensure correct operation, the client should call these APIs in the specified order:
 
-The client is expected to call the corresponding API in the following order inorder to work properly.
+- `fwupgrade_hal_set_download_url()`: Sets the URL from which the firmware image will be downloaded.
+- `fwupgrade_hal_set_download_interface()`: Configures the network interface for the download.
+- `fwupgrade_hal_download()`: Initiates the firmware download from the configured URL.
+- `fwupgrade_hal_reboot_ready()`: Checks if the system is prepared for a reboot after the download.
+- `fwupgrade_hal_download_reboot_now()`: Triggers a reboot to apply the downloaded firmware.
 
-1. `fwupgrade_hal_set_download_url()`
-2. `fwupgrade_hal_set_download_interface()`
-3. `fwupgrade_hal_download()`
-4. `fwupgrade_hal_reboot_ready()`
-5. `fwupgrade_hal_download_reboot_now()`
+**Additional API:**
 
-The following API will update the firmware and Factory reset the device in a single reboot.
-1. `fwupgrade_hal_update_and_factoryreset()`
+- `fwupgrade_hal_update_and_factoryreset()`: Combines firmware update and factory reset in a single reboot operation.
 
+**Implementation Note:**
 
-3rd party vendors will implement appropriately to meet operational requirements. This interface is expected to block if the hardware is not ready.
+Third-party vendors must implement these APIs to meet specific operational requirements. Be aware that these interfaces might block execution if the underlying hardware is not ready for the operation.
 
 ## Threading Model
 
-The interface is not thread safe.
-Any module which is invoking the API should ensure calls are made in a thread safe manner.
+**Requirement:** The Firmware Management HAL interface itself does not need to be inherently thread-safe. It is the responsibility of the calling modules or components to ensure thread-safe access and usage of the HAL APIs.
 
-Vendors can create internal threads/events to meet their operation requirements. These should be responsible to synchronize between the calls, events and cleaned up on closure.
+**Vendor Implementation:**
+
+Vendors can create internal threading and event mechanisms within their firmware management implementations to meet specific operational needs. However, vendors are responsible for ensuring that these mechanisms:
+
+- **Properly synchronize:** Access to the Firmware Management HAL APIs to prevent race conditions and data corruption.
+- **Clean up resources:** Release any allocated resources (e.g., memory, threads) when the implementation is no longer needed.
 
 ## Process Model
 
@@ -47,16 +70,20 @@ All API's are expected to be called from multiple process.
 
 ## Memory Model
 
-The client is responsible to allocate and de-allocate memory for necessary API's as specified in API documentation.
-Different 3rd party vendors allowed to allocate memory for internal operational requirements. In this case 3rd party implementations should be responsible to de-allocate internally.
+### Caller Responsibilities
 
-TODO:
-State a footprint requirement. Example: This should not exceed XXXX KB.
+- Manage memory passed to specific functions as outlined in the API documentation. This includes allocation and deallocation to prevent leaks.
+
+### Module Responsibilities
+
+- Handle and deallocate memory used for its internal operations.
+- Release all internally allocated memory upon closure to prevent leaks.
+
+TODO: State a footprint requirement. Example: This should not exceed XXXX KB.
 
 ## Power Management Requirements
 
 The HAL is not involved in any of the power management operation.
-Any power management state transitions MUST not affect the operation of the HAL.
 
 ## Asynchronous Notification Model
 
@@ -64,20 +91,23 @@ There are no asynchronous notifications.
 
 ## Blocking calls
 
-The API's are expected to work synchronously and should complete within a time period commensurate with the complexity of the operation and in accordance with any relevant specification.
+**Synchronous and Responsive:** All APIs within this module should operate synchronously and complete within a reasonable timeframe based on the complexity of the operation. Specific timeout values or guidelines may be documented for individual API calls.
 
-Any calls that can fail due to the lack of a response should have a timeout period in accordance with any API documentation.
+**Timeout Handling:** To ensure resilience in cases of unresponsiveness, implement appropriate timeouts for API calls where failure due to lack of response is a possibility. Refer to the API documentation for recommended timeout values per function.
 
-TODO:
-As we state that they should complete within a time period, we need to state what that time target is, and pull it from the spec if required. Define the timeout requirement.
+**Non-Blocking Requirement:** Given the single-threaded environment in which these APIs will be called, it is imperative that they do not block or suspend execution of the main thread. Implementations must avoid long-running operations or utilize asynchronous mechanisms where necessary to maintain responsiveness.
+
+TODO: As we state that they should complete within a time period, we need to state what that time target is, and pull it from the spec if required. Define the timeout requirement.
 
 ## Internal Error Handling
 
-All the Firmware Management HAL API's should return error synchronously as a return argument. HAL is responsible to handle system errors(e.g. out of memory) internally.
+**Synchronous Error Handling:** All APIs must return errors synchronously as a return value. This ensures immediate notification of errors to the caller.
+**Internal Error Reporting:** The HAL is responsible for reporting any internal system errors (e.g., out-of-memory conditions) through the return value.
+**Focus on Logging for Errors:** For system errors, the HAL should prioritize logging the error details for further investigation and resolution.
 
 ## Persistence Model
 
-There is no requirement for HAL to persist any setting information. The caller is responsible to persist any settings related to their implementation.
+There is no requirement for HAL to persist any setting information.
 
 ## Nonfunctional requirements
 
@@ -85,35 +115,43 @@ Following non functional requirement should be supported by the component.
 
 ## Logging and debugging requirements
 
-The component is should log all the error and critical informative messages, preferably using printf, syslog which helps to debug/triage the issues and understand the functional flow of the system.
+The Firmware Management HAL component is required to record all errors and critical informative messages to aid in identifying, debugging, and understanding the functional flow of the system. Logging should be implemented using the `syslog` method, as it provides robust logging capabilities suited for system-level software. The use of printf is discouraged unless syslog is not available.
 
-The logging should be consistent across all HAL components.
+All HAL components must adhere to a consistent logging process. When logging is necessary, it should be performed into the `fwupgrade_vendor_hal.log` file, which is located in either the `/var/tmp/` or `/rdklogs/logs/` directories.
 
-If the vendor is going to log then it has to be logged in `xxx_vendor_hal.log` file name which can be placed in `/rdklogs/logs/` or `/var/tmp/` directory.
+Logs must be categorized according to the following log levels, as defined by the Linux standard logging system, listed here in descending order of severity:
 
-Logging should be defined with log levels as per Linux standard logging.
+- **FATAL:** Critical conditions, typically indicating system crashes or severe failures that require immediate attention.
+- **ERROR:** Non-fatal error conditions that nonetheless significantly impede normal operation.
+- **WARNING:** Potentially harmful situations that do not yet represent errors.
+- **NOTICE:** Important but not error-level events.
+- **INFO:** General informational messages that highlight system operations.
+- **DEBUG:** Detailed information typically useful only when diagnosing problems.
+- **TRACE:** Very fine-grained logging to trace the internal flow of the system.
+  
+Each log entry should include a timestamp, the log level, and a message describing the event or condition. This standard format will facilitate easier parsing and analysis of log files across different vendors and components.
 
 ## Memory and performance requirements
 
-The component should not contributing more to memory and CPU utilization while performing normal operations and commensurate with the operation required.
+The component should be designed for efficiency, minimizing its impact on system resources during normal operation. Resource utilization (e.g., CPU, memory) should be proportional to the specific task being performed and align with any performance expectations documented in the API specifications.
 
 ## Quality Control
 
-Firmware Management HAL implementation should pass checks using any third party tools like `Coverity`, `Black duck`, `Valgrind` etc. without any issue to ensure quality.
+To ensure the highest quality and reliability, it is strongly recommended that third-party quality assurance tools like `Coverity`, `Black Duck`, and `Valgrind` be employed to thoroughly analyze the implementation. The goal is to detect and resolve potential issues such as memory leaks, memory corruption, or other defects before deployment.
 
-There should not be any memory leaks/corruption introduced by HAL and underneath 3rd party software implementation.
+Furthermore, both the HAL wrapper and any third-party software interacting with it must prioritize robust memory management practices. This includes meticulous allocation, deallocation, and error handling to guarantee a stable and leak-free operation.
 
 ## Licensing
 
-Firmware Management HAL implementation is expected to released under the Apache License 2.0.
+The implementation is expected to released under the Apache License 2.0.
 
 ## Build Requirements
 
-The source code should be able to be built under Linux Yocto environment and should be delivered as a shared library named as `libfw_upgrade.so`
+The source code should be capable of, but not be limited to, building under the Yocto distribution environment. The recipe should deliver a shared library named as `libfw_upgrade.so`.
 
 ## Variability Management
 
-Changes to the interface will be controlled by versioning, vendors will be expected to implement to a fixed version of the interface, and based on SLA agreements move to later versions as demand requires.
+The role of adjusting the interface, guided by versioning, rests solely within architecture requirements. Thereafter, vendors are obliged to align their implementation with a designated version of the interface. As per Service Level Agreement (SLA) terms, they may transition to newer versions based on demand needs.
 
 Each API interface will be versioned using [Semantic Versioning 2.0.0](https://semver.org/), the vendor code will comply with a specific version of the interface.
 
@@ -125,13 +163,30 @@ None
 
 All HAL function prototypes and datatype definitions are available in `fwupgrade_hal.h` file.
 
-  1.  Components/Processes must include `fwupgrade_hal.h` to make use of Firmware Management HAL capabilities.
-  2.  Components/Processes should add linker dependency for `libfw_upgrade.so`
-
+  1. Components/Processes must include `fwupgrade_hal.h` to make use of Firmware Management HAL capabilities.
+  2. Components/Processes should add linker dependency for `libfw_upgrade.so`
 
 ## Theory of operation and key concepts
 
-Covered as per "Description" sections in the API documentation.
+The `FirmwareManagementhalSpec.md` and `fwupgrade_hal.h` documents define the RDK HAL interface for firmware upgrades. The HAL is designed to abstract the complexities of firmware management, providing a standardized API for RDK software to interact with different firmware upgrade mechanisms.
+
+### Key Findings
+
+- **Object Lifecycles:** The HAL itself does not explicitly manage object lifecycles. It provides functions to initiate and monitor firmware downloads and upgrades. However, the underlying implementation of the HAL (not shown in these files) would likely manage the lifetime of firmware images, download processes, and other internal resources. The API does not expose unique identifiers for these objects.
+
+- **Method Sequencing:** There is a general sequence in which methods should be called:
+   1. **Set Download URL and Interface:** Specify the location of the firmware image and the network interface to use for download (`fwupgrade_hal_set_download_url`, `fwupgrade_hal_set_download_interface`).
+   2. **Download:** Start the firmware download process (`fwupgrade_hal_download`).
+   3. **Monitor Download Status:** Track the progress of the download using `fwupgrade_hal_get_download_status`.
+   4. **Reboot Ready:** Check if the device is ready for reboot after download completes (`fwupgrade_hal_reboot_ready`).
+   5. **Download Reboot Now:** Initiate a reboot to apply the new firmware (`fwupgrade_hal_download_reboot_now`).
+
+- **State-Dependent Behavior:** The `fwupgrade_hal_download_reboot_now` function exhibits state-dependent behavior. It is expected to succeed only when the device is ready for reboot (as indicated by `fwupgrade_hal_reboot_ready`).
+  
+### Additional Notes
+
+- **Error Handling:** The API functions return integer values indicating success (0) or failure (-1). However, the documentation lacks detailed error codes for specific failure scenarios.
+- **State Transitions:** The specification does not explicitly define a state machine for firmware upgrades. However, the implicit states (e.g., "download in progress," "ready for reboot") can be inferred from the available API functions and their expected behavior.
 
 ## Sequence Diagram
 
