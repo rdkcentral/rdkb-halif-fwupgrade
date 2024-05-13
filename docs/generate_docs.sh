@@ -24,7 +24,7 @@ HAL_GENERATOR_VERSION=1.2.0
 
 # This will look up the last tag in the git repo, depending on the project this may require modification
 PROJECT_VERSION=$(git describe --tags | head -n1)
-DOXYGEN_EXTRA_PARAMS="PREDEFINED='FEATURE_RDKB_THERMAL_MANAGER=1 FEATURE_RDKB_LED_MANAGER=1'"
+DOXYGEN_EXTRA_PARAMS=""
 
 # Check if the common document configuration is present, if not clone it
 if [ -d "./build" ]; then
