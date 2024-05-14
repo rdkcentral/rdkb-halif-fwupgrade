@@ -97,7 +97,16 @@ There are no asynchronous notifications.
 
 **Non-Blocking Requirement:** Given the single-threaded environment in which these APIs will be called, it is imperative that they do not block or suspend execution of the main thread. Implementations must avoid long-running operations or utilize asynchronous mechanisms where necessary to maintain responsiveness.
 
-TODO: As we state that they should complete within a time period, we need to state what that time target is, and pull it from the spec if required. Define the timeout requirement.
+TODO: Improvements to this documentation
+
+- **Define API Response Time Requirements:**
+  - For each API, specify the expected maximum response time under normal operating conditions.
+  - Consider factors like network latency, hardware limitations, and the complexity of the operation.
+  - If applicable, reference relevant DOCSIS or RDK-B specifications for guidance on response time expectations.
+- **Implement Timeout Mechanisms:**
+  - Add timeout mechanisms to API calls that may be susceptible to external delays or unresponsiveness.
+  - Document the default timeout values for each applicable API in the header file.
+  - Allow for customization of timeout values where appropriate.
 
 ## Internal Error Handling
 
