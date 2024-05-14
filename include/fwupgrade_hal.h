@@ -16,11 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-/**
+/**!
+* @brief The fwupgrade_hal.h header file defines the RDK Firmware Upgrade HAL, providing functions to:
 * 
-* @file fwupgrade_hal.h
-* @brief fwupgrade_hal provides an interface to get/set firmware download, reboot control features.
-*
+* Configure: Set download URL, filename, and network interface.
+* Download: Initiate, monitor, and control firmware downloads.
+* Reboot: Manage device reboots after successful downloads or updates.
+* Advanced Operations: Support firmware updates with factory reset and direct download/install.
 */
 
 #ifndef __FWUPGRADE_HAL_H__
@@ -50,6 +52,10 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+/*
+* TODO: The following macros are expected to be deprecated in future versions of the interface.
+*/
 
 #ifndef CHAR
 #define CHAR  char
@@ -123,157 +129,161 @@ extern "C"{
 **********************************************************************************/
 
 /*
- * TODO:
- *
- * 1. Extend the return codes by listing out the possible reasons of failure, to improve the interface in the future.
- *    This was reported during the review for header file migration to opensource github.
- *
+ * TODO (Error Handling Enhancement):
+ *   - Replace generic `RETURN_ERR` with an enumerated error code type for improved clarity and debugging.
+ *   - Define specific error codes to pinpoint various failure scenarios, including:
+ *       - Invalid input parameters (e.g., null pointers, out-of-range values)
+ *       - Resource allocation failures (e.g., out-of-memory)
+ *       - Communication or timeout issues with external systems
+ *       - File system errors (e.g., file not found, permission denied)
+ *       - Hardware-specific errors (e.g., SIM card not present, eUICC malfunction)
+ *       - Internal module errors 
+ *   - Document the new error codes thoroughly in the header file and any relevant guides.
  */
 
-
-/**
-* @brief Set FW Download URL and Filename.
+/**!
+* @brief Sets the URL and filename for a firmware download.
 *
-* @param[in] pUrl A pointer to a character array that will hold the firmware download URL.
-*                 \n URL buffer size should be at least 1024 bytes.
-*                 \n Example pUrl: http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images
-
-* @param[in] pfilename - A pointer to a character array that will hold the firmware filename.
-*                      \n Filename buffer size should be at least 256 bytes.
-*                      \n pfilename format: \<MODEL_NUM\>_<BRANCH_NAME>_PROD_sey.bin
-*                      \n pfilename example: TG4482PC2_6.2p10s1_PROD_sey.bin
-*                      \n Possible MODEL_NUM:
-*                      \n CGM4140COM, TG3482G, CGM4981COM, CGM4331COM, CGA4332COM, SR300, SE501, WNXL11BWL, SR203, SR213, TG4482A
+* This function configures the URL from which the firmware image will be downloaded and the local filename to store it.
 *
-* @return the status of the operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if pUrl / pfilename string is NULL (or)
-*         failed to open HTTP download config file '/tmp/httpDwnld.conf'.
+* @param[in] pUrl - The URL of the firmware image (e.g., "http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images"). 
+* @param[in] pfilename - The desired filename for the downloaded firmware image. 
+*
+* @returns Status of the operation:
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., null pointers, failure to open configuration file).
+*
+* @note  Refer to relevant documentation or guidelines for specific filename format requirements and any additional error scenarios.
 */
 INT fwupgrade_hal_set_download_url (char* pUrl, char* pfilename);
 
-
-/**
-* @brief Get FW Download URL and Filename.
-* @param[out] pUrl A pointer to a character array that will hold the firmware download URL.
-*                  \n The buffer size should be at least 1024 bytes.
-*                  \n Example pUrl: http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images
-* @param[out] pfilename - A pointer to a character array that will hold the firmware filename.
-*                       \n The buffer size should be at least 256 bytes.
-*                       \n pfilename format: \<MODEL_NUM\>_<BRANCH_NAME>_PROD_sey.bin
-*                       \n pfilename example: TG4482PC2_6.2p10s1_PROD_sey.bin
-*                       \n Possible MODEL_NUM:
-*                       \n CGM4140COM, TG3482G, CGM4981COM, CGM4331COM, CGA4332COM, SR300, SE501, WNXL11BWL, SR203, SR213, TG4482A
-* @return the status of the operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if pUrl / pfilename string is NULL (or)
-*         failed to open HTTP download config file '/tmp/httpDwnld.conf'.
+/**!
+* @brief Retrieves the firmware download URL and filename.
+*
+* This function populates the provided buffers with the URL and filename of the firmware to be downloaded, as retrieved from the configuration.
+*
+* @param[out] pUrl         Buffer to store the firmware download URL (min. 1024 bytes).
+* @param[out] pfilename    Buffer to store the firmware filename (min. 256 bytes).
+*
+* @returns Status of the operation:
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., null pointers, configuration errors). 
+*
+* @note See relevant documentation for details on the expected filename format and potential error conditions. 
 */
 INT fwupgrade_hal_get_download_url (char *pUrl, char* pfilename);
 
-
-/**
-* @brief Set the FW Download Interface.
-* @param[in] interface The interface to be set.
-*                      \n Use interface = 0 for wan0 and interface = 1 for erouter0.
-* @return the status of the operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if interface > 1 (or)
-*         failed to open HTTP download interface config file '/tmp/httpDwnldIf.conf'.
+/**!
+* @brief Configures the network interface for firmware downloads.
+*
+* This function sets the network interface used for downloading firmware updates over HTTP.
+*
+* @param[in] interface - Network interface identifier:
+*                         - 0: wan0
+*                         - 1: erouter0
+*
+* @returns Status of the operation:
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., invalid interface value, configuration file error).
 */
-/* interface=0 for wan0, interface=1 for erouter0 */
 INT fwupgrade_hal_set_download_interface (unsigned int interface);
 
-
-/**
-* @brief Get the FW Download Interface.
-* @param[out] pinterface A pointer to an unsigned integer that stores retrieved interface value.
-*                        \n Interface value is represented as follows: 0 for wan0 and 1 for erouter0.
-* @return the status of the operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if pinterface is NULL (or)
-*         failed to open HTTP download interface config file '/tmp/httpDwnldIf.conf'.
+/**!
+* @brief Retrieves the configured firmware download interface.
+*
+* This function fetches the network interface identifier used for firmware downloads.
+*
+* @param[out] pinterface - Pointer to an unsigned integer to store the interface value:
+*                         - 0: wan0
+*                         - 1: erouter0
+*
+* @returns Status of the operation:
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., null pointer, configuration file error).
 */
-/* interface=0 for wan0, interface=1 for erouter0 */
 INT fwupgrade_hal_get_download_interface (unsigned int* pinterface);
 
-
-/**
-* @description Start FW Download.
+/**!
+* @brief Initiates firmware download and installation.
 * 
-* @return the status of the operation.
-* @retval RETURN_OK if Image flash is successful.
-* @retval RETURN_ERR if failed to get HTTP download URL or filename (or)
-*         \n failed download the image to CPE (or)
-*         \n failed to execute OEM specific firmware flasher (or)
-*         \n failed to set bootstate to new image.
-* @retval 400 - Invalid URL (or) Failed on gethostbyname() call.
+* This function fetches the firmware image from the configured URL, validates it, and performs the installation process. 
 *
+* @returns Status of the operation:
+* @retval RETURN_OK - On successful download and installation of the firmware.
+* @retval RETURN_ERR - On general failure (see potential causes below).
+* @retval 400 - Invalid URL or failure to resolve the hostname.
+*
+* **Potential Causes of RETURN_ERR:**
+*   - Failure to retrieve the HTTP download URL or filename.
+*   - Error downloading the image to the CPE.
+*   - Failure executing the OEM-specific firmware flasher.
+*   - Error setting the boot state to the new image.
 */
 INT fwupgrade_hal_download ();
 
-
-/**
-* @brief Get the FW Download Status.
+/**!
+* @brief Retrieves the firmware (FW) download status.
 *
-* @return the status of the FW Download.
-* @retval 0 - Download is not started.
-* @retval 0-100 - Values of percent of download.
-* @retval 200 - Download is completed and waiting for reboot.
-* @retval 400 - Invalid Http server Url.
-* @retval 401 - Cannot connect to Http server.
-* @retval 402 - File is not found on Http server.
-* @retval 403 - HW_Type_DL_Protection Failure.
+* @returns The firmware download status:
+* @retval 0 - Download not started.
+* @retval 1-99 - Percentage of download completed.
+* @retval 100 - Download complete, pending reboot.
+* @retval 400 - Invalid HTTP server URL.
+* @retval 401 - Cannot connect to HTTP server.
+* @retval 402 - File not found on HTTP server.
+* @retval 403 - HW Type DL Protection Failure.
 * @retval 404 - HW Mask DL Protection Failure.
 * @retval 405 - DL Rev Protection Failure.
 * @retval 406 - DL Header Protection Failure.
 * @retval 407 - DL CVC Failure.
 * @retval 500 - General Download Failure.
-*
 */
 INT fwupgrade_hal_get_download_status ();
 
 
-/**
-* @brief Get the Reboot Ready Status.
-* @param[out] pValue    Pointer to an unsigned long variable that will store the reboot ready status.
-*                    \n Value 1 represents ready for reboot and 2 represents not ready for reboot.
-* @return the status of the operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if pValue is NULL.
+/**!
+* @brief Retrieves the reboot readiness status.
+*
+* This function checks if the system is ready to be rebooted after a firmware update.
+*
+* @param[out] pValue - Pointer to an unsigned long variable where the status will be stored:
+*              - 1: Ready for reboot.
+*              - 2: Not ready for reboot.
+*
+* @returns Status of the operation:
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., null pointer).
 */
 INT fwupgrade_hal_reboot_ready (ULONG *pValue);
 
-
-/**
-* @brief FW Download Reboot Now.
+/**!
+* @brief Triggers an immediate reboot to apply downloaded firmware.
 * 
-* @return the status of the reboot operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if any reboot is in process.
+* @returns Status of the reboot operation:
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - If another reboot is already in progress or an error occurred.
 */
 INT fwupgrade_hal_download_reboot_now ();
 
-
-/**
-* @brief Firmware update and factory reset the device.
-* 
-* @return the status of the Firmware update and factory reset operation.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR if failed download the image to CPE (or)
-*         \n if any reboot is in process.
+/**!
+* @brief Performs a firmware update and factory reset on the device.
+*
+* @returns Status of the update and reset operation.
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., download error, reboot in progress).
 */
 INT fwupgrade_hal_update_and_factoryreset ();
 
-
-/**
-* @brief Downloads and upgrades the firmware.
-* @param[in] url URL from which to download the firmware.
-*                \n The URL buffer size should be at least 1024 bytes.
-*                \n Example pUrl: http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images
-* @return the status of the Firmware download and upgrade status.
-* @retval RETURN_OK if successful.
-* @retval RETURN_ERR in case of remote server not reachable.
+/**!
+* @brief Downloads and installs a firmware update from the specified URL.
+*
+* This function fetches the firmware image from the provided URL and initiates the installation process.
+*
+* @param[in] url - URL of the firmware image (e.g., "http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images"). 
+*
+* @returns Status of the firmware download and upgrade operation.
+* @retval RETURN_OK - On success.
+* @retval RETURN_ERR - On failure (e.g., server unreachable, invalid URL, download or installation error).
 */
 INT fwupgrade_hal_download_install(const char *url);
 
