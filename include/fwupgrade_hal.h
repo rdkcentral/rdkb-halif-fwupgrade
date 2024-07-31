@@ -266,12 +266,15 @@ INT fwupgrade_hal_reboot_ready (ULONG *pValue);
 INT fwupgrade_hal_download_reboot_now ();
 
 /**!
-* @brief Performs a firmware update and factory reset on the device.
-*
-* @returns Status of the update and reset operation.
-* @retval RETURN_OK - On success.
-* @retval RETURN_ERR - On failure (e.g., download error, reboot in progress).
-*/
+ * @brief Performs a firmware update and factory reset on the device.
+ *
+ * This function initiates a firmware update process and, upon successful completion, 
+ * performs a factory reset to restore the device to its default settings.
+ *
+ * @returns Status of the update and reset operation.
+ * @retval RETURN_OK - On success.
+ * @retval RETURN_ERR - On failure (e.g., download error, reboot in progress).
+ */
 INT fwupgrade_hal_update_and_factoryreset ();
 
 /**!
