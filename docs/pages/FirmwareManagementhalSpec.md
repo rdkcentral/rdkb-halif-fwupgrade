@@ -177,25 +177,51 @@ All HAL function prototypes and datatype definitions are available in `fwupgrade
 
 ## Theory of operation and key concepts
 
-The `FirmwareManagementhalSpec.md` and `fwupgrade_hal.h` documents define the RDK HAL interface for firmware upgrades. The HAL is designed to abstract the complexities of firmware management, providing a standardized API for RDK software to interact with different firmware upgrade mechanisms.
+The Firmware Upgrade HAL (Hardware Abstraction Layer) interface facilitates firmware updates for devices. This involves downloading firmware images, managing device reboots, and potentially performing factory resets.
 
-### Key Findings
+### Object Lifecycles
 
-- **Object Lifecycles:** The HAL itself does not explicitly manage object lifecycles. It provides functions to initiate and monitor firmware downloads and upgrades. However, the underlying implementation of the HAL (not shown in these files) would likely manage the lifetime of firmware images, download processes, and other internal resources. The API does not expose unique identifiers for these objects.
+The HAL interface doesn't explicitly manage objects in the traditional sense (i.e., instances of classes). Instead, it primarily deals with:
 
-- **Method Sequencing:** There is a general sequence in which methods should be called:
-   1. **Set Download URL and Interface:** Specify the location of the firmware image and the network interface to use for download (`fwupgrade_hal_set_download_url`, `fwupgrade_hal_set_download_interface`).
-   2. **Download:** Start the firmware download process (`fwupgrade_hal_download`).
-   3. **Monitor Download Status:** Track the progress of the download using `fwupgrade_hal_get_download_status`.
-   4. **Reboot Ready:** Check if the device is ready for reboot after download completes (`fwupgrade_hal_reboot_ready`).
-   5. **Download Reboot Now:** Initiate a reboot to apply the new firmware (`fwupgrade_hal_download_reboot_now`).
+- **Configuration Parameters:** These are set using functions like `fwupgrade_hal_set_download_url` and `fwupgrade_hal_set_download_interface`. These parameters are likely stored internally by the HAL implementation, but their exact lifetime and management are not exposed in the interface.
 
-- **State-Dependent Behavior:** The `fwupgrade_hal_download_reboot_now` function exhibits state-dependent behavior. It is expected to succeed only when the device is ready for reboot (as indicated by `fwupgrade_hal_reboot_ready`).
-  
-### Additional Notes
+- **Firmware Images:** Downloaded and potentially installed during the update process. The lifecycle of these images is typically managed by the underlying firmware update mechanism, not directly by the HAL interface.
 
-- **Error Handling:** The API functions return integer values indicating success (0) or failure (-1). However, the documentation lacks detailed error codes for specific failure scenarios.
-- **State Transitions:** The specification does not explicitly define a state machine for firmware upgrades. However, the implicit states (e.g., "download in progress," "ready for reboot") can be inferred from the available API functions and their expected behavior.
+### Method Sequencing
+
+There is a logical sequence in which methods should be called:
+
+1. **Configuration:** Functions like `fwupgrade_hal_set_download_url` and `fwupgrade_hal_set_download_interface` should be called first to configure the update process.
+
+2. **Download:** `fwupgrade_hal_download` initiates the download.
+
+3. **Status Checking (Optional):** `fwupgrade_hal_get_download_status` can be used to monitor progress.
+
+4. **Reboot (If Applicable):** `fwupgrade_hal_reboot_ready` checks if a reboot is needed, and `fwupgrade_hal_download_reboot_now` can initiate it.
+
+5. **Advanced Operations (Optional):** Functions like `fwupgrade_hal_update_and_factoryreset` and `fwupgrade_hal_download_install` are used for special cases.
+
+### State-Dependent Behavior
+
+The behavior of some methods depends on the current state of the firmware update process:
+
+- `fwupgrade_hal_get_download_status`: Meaningful only during or after a download has been initiated.
+
+- `fwupgrade_hal_reboot_ready` and `fwupgrade_hal_download_reboot_now`: Relevant only after a download has completed.
+
+- `fwupgrade_hal_update_and_factoryreset` and `fwupgrade_hal_download_install`: Can be called independently of a standard download process.
+
+### Implicit State Model
+
+While not explicitly documented, there's an implicit state model governing the firmware update process:
+
+1. **Idle:** No update in progress.
+2. **Downloading:** Firmware is being downloaded.
+3. **Downloaded:** Download complete, awaiting reboot (or other action).
+4. **Rebooting:** Device is rebooting to apply the update.
+5. **Error:** An error occurred during the update process.
+
+The HAL interface should ensure that methods are called in a way that's consistent with this implicit state model.
 
 ## Sequence Diagram
 
