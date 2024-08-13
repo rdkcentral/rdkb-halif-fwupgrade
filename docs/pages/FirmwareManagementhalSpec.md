@@ -230,36 +230,36 @@ sequenceDiagram
 participant Caller
 participant FirmwareManagement HAL
 participant Vendor
-Note over Caller: Init once during bootup, Needed for Dependent API's. <br> Ignore this if caller doesn't have any Dependent API's
-Caller->>FirmwareManagement HAL: fwupgrade_hal_set_download_url() and <br> fwupgrade_hal_set_download_interface()
-FirmwareManagement HAL->>Vendor: 
-Vendor ->>FirmwareManagement HAL: 
-FirmwareManagement HAL->>Caller: return
+Note over Caller: Initialization is needed once during bootup if the caller uses dependent APIs. Ignore this step if there are no dependent APIs.
+Caller->>FirmwareManagement HAL: Set download URL using `fwupgrade_hal_set_download_url()` and download interface using `fwupgrade_hal_set_download_interface()`
+FirmwareManagement HAL->>Vendor: Forward request to vendor-specific implementation
+Vendor ->>FirmwareManagement HAL: Acknowledge the request
+FirmwareManagement HAL->>Caller: Return acknowledgment to the caller
 
-Caller->>FirmwareManagement HAL: fwupgrade_hal_download()
-FirmwareManagement HAL->>Vendor: 
-Vendor ->>FirmwareManagement HAL: 
-FirmwareManagement HAL->>Caller: return
+Caller->>FirmwareManagement HAL: Initiate firmware download using `fwupgrade_hal_download()`
+FirmwareManagement HAL->>Vendor: Forward download request to vendor-specific implementation
+Vendor ->>FirmwareManagement HAL: Acknowledge the download initiation
+FirmwareManagement HAL->>Caller: Return acknowledgment to the caller
 
-Caller->>FirmwareManagement HAL: fwupgrade_hal_reboot_ready() and <br> fwupgrade_hal_download_reboot_now()
-FirmwareManagement HAL->>Vendor: 
-Vendor ->>FirmwareManagement HAL: 
-FirmwareManagement HAL->>Caller: return
+Caller->>FirmwareManagement HAL: Check if ready for reboot with `fwupgrade_hal_reboot_ready()` and initiate reboot with `fwupgrade_hal_download_reboot_now()`
+FirmwareManagement HAL->>Vendor: Forward reboot request to vendor-specific implementation
+Vendor ->>FirmwareManagement HAL: Acknowledge the reboot request
+FirmwareManagement HAL->>Caller: Return acknowledgment to the caller
 ```
 
 ## Firmware Upgrade Process
 
 ```mermaid
 graph TD
-    subgraph Firmware Upgrade
+    subgraph Firmware Upgrade Process
     A[Set Download URL] --> B[Set Download Interface]
-    B --> C[Download]
-    C --> D{Download Successful?}
-    D -->|Yes| E[Reboot Ready?]
+    B --> C[Initiate Download]
+    C --> D{Was Download Successful?}
+    D -->|Yes| E[Check Reboot Readiness]
     D -->|No| F[Retry Download]
-    E -->|Yes| G[Reboot Now]
+    E -->|Yes| G[Initiate Reboot]
     E -->|No| F[Retry Download]
-    F --> C[Download] 
+    F --> C[Initiate Download Again]
     end
 ```
 
@@ -267,31 +267,31 @@ graph TD
 
 ```mermaid
 graph LR
-    A[Download] -->B{Download Successful?}
-    B -->|Yes| C[Continue]
-    B -->|No| D[Get Error Code]
-    D --> E[Handle Error]
-    E --> F{Retry Possible?}
-    F -->|Yes| A[Download]
-    F -->|No| G[Report Fatal Error]
+    A[Attempt to Download Firmware] --> B{Was the Download Successful?}
+    B -->|Yes| C[Proceed with Next Steps]
+    B -->|No| D[Retrieve Error Code]
+    D --> E[Handle the Specific Error]
+    E --> F{Is Retry Possible?}
+    F -->|Yes| A[Retry Download]
+    F -->|No| G[Report Fatal Error and Abort Process]
 ```
 
 ## Update Procedure (Simplified)
 
 ```mermaid
 graph TD
-    A[Prepare Firmware] -->B[Initiate Update]
-    B --> C{Update Successful?}
-    C -->|Yes| D[Verify Update]
-    C -->|No| E[Handle Update Error]
+    A[Prepare Firmware for Update] --> B[Initiate Firmware Update]
+    B --> C{Was the Update Successful?}
+    C -->|Yes| D[Verify the Updated Firmware]
+    C -->|No| E[Handle the Update Error]
 ```
 
 ```mermaid
 graph LR
-    A[Download Fails] --> B[Increment Retry Count]
-    B --> C{Retry Limit Reached?}
-    C --> |Yes| D[Report Retry Failure]
-    C --> |No| E[Wait Exponential Backoff]
+    A[Download Failed] --> B[Increment the Retry Count]
+    B --> C{Has Retry Limit Been Reached?}
+    C --> |Yes| D[Report Retry Failure and Abort]
+    C --> |No| E[Wait for Exponential Backoff]
     E --> F[Retry Download]
-    F --> A
+    F --> A[Attempt to Download Firmware Again]
 ```
