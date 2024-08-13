@@ -246,3 +246,52 @@ FirmwareManagement HAL->>Vendor:
 Vendor ->>FirmwareManagement HAL: 
 FirmwareManagement HAL->>Caller: return
 ```
+
+## Firmware Upgrade Process
+
+```mermaid
+graph TD
+    subgraph Firmware Upgrade
+    A[Set Download URL] --> B[Set Download Interface]
+    B --> C[Download]
+    C --> D{Download Successful?}
+    D -->|Yes| E[Reboot Ready?]
+    D -->|No| F[Retry Download]
+    E -->|Yes| G[Reboot Now]
+    E -->|No| F[Retry Download]
+    F --> C[Download] 
+    end
+```
+
+##  Error Handling
+
+```mermaid
+graph LR
+    A[Download] -->B{Download Successful?}
+    B -->|Yes| C[Continue]
+    B -->|No| D[Get Error Code]
+    D --> E[Handle Error]
+    E --> F{Retry Possible?}
+    F -->|Yes| A[Download]
+    F -->|No| G[Report Fatal Error]
+```
+
+## Update Procedure (Simplified)
+
+```mermaid
+graph TD
+    A[Prepare Firmware] -->B[Initiate Update]
+    B --> C{Update Successful?}
+    C -->|Yes| D[Verify Update]
+    C -->|No| E[Handle Update Error]
+```
+
+```mermaid
+graph LR
+    A[Download Fails] --> B[Increment Retry Count]
+    B --> C{Retry Limit Reached?}
+    C --> |Yes| D[Report Retry Failure]
+    C --> |No| E[Wait Exponential Backoff]
+    E --> F[Retry Download]
+    F --> A
+```
