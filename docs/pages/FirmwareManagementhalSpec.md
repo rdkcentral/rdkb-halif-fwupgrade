@@ -225,6 +225,8 @@ The HAL interface should ensure that methods are called in a way that's consiste
 
 ## Sequence Diagram
 
+This sequence diagram outlines the steps involved in a firmware upgrade process, showing the interaction between the caller, the Firmware Management HAL (Hardware Abstraction Layer), and the vendor-specific implementation. It highlights the sequence of API calls to set the download URL and interface, initiate the firmware download, and finally, prepare for and execute a system reboot after a successful download.
+
 ```mermaid
 sequenceDiagram
 participant Caller
@@ -249,6 +251,8 @@ FirmwareManagement HAL->>Caller: Return acknowledgment to the caller
 
 ## Firmware Upgrade Process
 
+This flowchart illustrates the general firmware upgrade process. It begins with setting the download URL and interface, then proceeds to initiate the firmware download. The process includes decision points to check if the download was successful and whether the system is ready for a reboot. If the download fails or the system is not ready for a reboot, it retries the download process.
+
 ```mermaid
 graph TD
     subgraph Firmware Upgrade Process
@@ -265,6 +269,8 @@ graph TD
 
 ##  Error Handling
 
+This diagram focuses on the error handling mechanism during the firmware download process. It shows how the system responds if a download fails, including retrieving the error code, handling the error, and determining whether a retry is possible. If retries are exhausted or not possible, the process terminates with a fatal error report.
+
 ```mermaid
 graph LR
     A[Attempt to Download Firmware] --> B{Was the Download Successful?}
@@ -278,6 +284,8 @@ graph LR
 
 ## Update Procedure (Simplified)
 
+This simplified flowchart represents the general steps involved in a firmware update. It begins with the preparation of the firmware, followed by the initiation of the update process. After the update, the system checks for success, verifies the updated firmware if successful, or handles any errors if the update fails.
+
 ```mermaid
 graph TD
     A[Prepare Firmware for Update] --> B[Initiate Firmware Update]
@@ -285,6 +293,10 @@ graph TD
     C -->|Yes| D[Verify the Updated Firmware]
     C -->|No| E[Handle the Update Error]
 ```
+
+## Download Retry Mechanism
+
+This diagram illustrates the retry mechanism used when a firmware download fails. It includes logic for incrementing the retry count, checking if the retry limit has been reached, and implementing an exponential backoff strategy before retrying the download. If the retry limit is exceeded, the process reports a failure and aborts.
 
 ```mermaid
 graph LR
