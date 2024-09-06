@@ -146,7 +146,7 @@ extern "C"{
 *
 * This function configures the URL from which the firmware image will be downloaded and the local filename to store it.
 *
-* @param[in] pUrl - The URL of the firmware image (e.g., "http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images"). 
+* @param[in] pUrl - The URL of the firmware image 
 * @param[in] pfilename - The desired filename for the downloaded firmware image. 
 *
 * @returns Status of the operation:
@@ -282,7 +282,7 @@ INT fwupgrade_hal_update_and_factoryreset ();
 *
 * This function fetches the firmware image from the provided URL and initiates the installation process.
 *
-* @param[in] url - URL of the firmware image (e.g., "http://dac15cdlserver.ae.ccp.xcal.tv:8080/Images"). 
+* @param[in] url - URL of the firmware image
 *
 * @returns Status of the firmware download and upgrade operation.
 * @retval RETURN_OK - On success.
